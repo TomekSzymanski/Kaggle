@@ -26,6 +26,8 @@ from sklearn.pipeline import Pipeline
 import xgboost
 from xgboost import XGBClassifier
 
+from imblearn.over_sampling import RandomOverSampler
+
 
 
 pd.set_option('display.max_rows', 500)
@@ -664,6 +666,216 @@ y_pred = classifier.predict_proba(X_test)[:,1]
 
 gini_norm(y_test, y_pred)
 # 0.2837
+
+
+# ### Minority class oversampling
+
+
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+# X_resampled, y_resampled = RandomOverSampler().fit_sample(X_train, y_train)
+
+
+
+# X_resampled_df = pd.DataFrame(X_resampled, columns = X_train.columns)
+# y_resampled_df = pd.Series(y_resampled)
+
+
+
+# # WARN: this tuned settings may not be optimal for oversampling
+# classifier = XGBClassifier(learning_rate=0.05, n_estimators=750, max_depth=3, min_child_weight=2, gamma=0.01, reg_alpha=10,
+#                                             subsample=0.9, colsample_bytree=0.9, objective='binary:logistic')
+# classifier.fit(X_resampled_df, y_resampled_df)
+
+# y_pred = classifier.predict_proba(X_test)[:,1]
+# gini_norm(y_test, y_pred)
+
+
+# The oversampled score of 0.2764 is less than baseline 0.2837. Plain oversampling did not help for XGB, maybe it will help for RF. 
+
+# Try out RF with random oversampling
+
+
+# classifier = RandomForestClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1)
+# classifier.fit(X_resampled_df, y_resampled_df)
+
+# y_pred = classifier.predict_proba(X_test)[:,1]
+# gini_norm(y_test, y_pred)
+
+
+# Far better than RF on unbalanced dataset (which had Gini of 0.18). To be used in further ensembles.
+
+# Try out SMOTE
+
+
+# from imblearn.over_sampling import SMOTE
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+# X_resampled, y_resampled = SMOTE().fit_sample(X_train, y_train)
+
+
+
+# X_resampled_df = pd.DataFrame(X_resampled, columns = X_train.columns)
+# y_resampled_df = pd.Series(y_resampled)
+
+
+
+# classifier = XGBClassifier(learning_rate=0.05, n_estimators=750, max_depth=3, min_child_weight=2, gamma=0.01, reg_alpha=10,
+#                                             subsample=0.9, colsample_bytree=0.9, objective='binary:logistic')
+# classifier.fit(X_resampled_df, y_resampled_df)
+
+# y_pred = classifier.predict_proba(X_test)[:,1]
+# gini_norm(y_test, y_pred)
+
+
+# Very poor: 0.1982
+
+# SMOTE on RF?
+
+
+# classifier = RandomForestClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1)
+# classifier.fit(X_resampled_df, y_resampled_df)
+
+# y_pred = classifier.predict_proba(X_test)[:,1]
+# gini_norm(y_test, y_pred)
+
+
+# Poor: 0.1891
+
+# Under sampling?
+
+
+# from imblearn.under_sampling import RandomUnderSampler
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+# X_resampled, y_resampled = RandomUnderSampler().fit_sample(X_train, y_train)
+# X_resampled_df = pd.DataFrame(X_resampled, columns = X_train.columns)
+# y_resampled_df = pd.Series(y_resampled)
+
+# classifier = RandomForestClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1)
+# classifier.fit(X_resampled_df, y_resampled_df)
+
+# y_pred = classifier.predict_proba(X_test)[:,1]
+# gini_norm(y_test, y_pred)
+
+
+# Not bad 0.2315 vs 0.19 baseline
+
+
+# from imblearn.over_sampling import ADASYN
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+# X_resampled, y_resampled = ADASYN().fit_sample(X_train, y_train)
+# X_resampled_df = pd.DataFrame(X_resampled, columns = X_train.columns)
+# y_resampled_df = pd.Series(y_resampled)
+
+# classifier = RandomForestClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1)
+# classifier.fit(X_resampled_df, y_resampled_df)
+
+# y_pred = classifier.predict_proba(X_test)[:,1]
+# gini_norm(y_test, y_pred)
+
+
+# Poor ADASYN with RF: 0.1684
+
+# ### Extra trees
+
+
+# classifier = ExtraTreesClassifier(n_estimators=24, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1, max_features=14)
+
+# grid_search_CV = GridSearchCV(classifier, {
+#     'min_samples_split': [100, 1000, 5000, 9000],
+#     'max_features': [12, 14, 16]
+# }, n_jobs=7, cv=StratifiedKFold(n_splits=3, shuffle=True), scoring=make_scorer(roc_auc_score), verbose=10)
+
+# grid_search_CV.fit(X, y)
+
+# grid_search_CV.best_params_, grid_search_CV.best_score_
+# ({'max_features': 14, 'min_samples_split': 5000}, 0.59043612417733271)
+
+
+
+# from sklearn.ensemble import ExtraTreesClassifier
+
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+# classifier = ExtraTreesClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1, max_features=14)
+# classifier.fit(X_train, y_train)
+
+# y_pred = classifier.predict_proba(X_test)[:,1]
+# gini_norm(y_test, y_pred)
+# # 0.2557
+
+
+# Extra trees Gini 0.2557
+
+
+# classifier = ExtraTreesClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1, max_features=14)
+# classifier.fit(X_resampled_df, y_resampled_df)
+
+# y_pred = classifier.predict_proba(X_test)[:,1]
+# gini_norm(y_test, y_pred)
+
+
+# No gain: 0.2556
+
+# ### Stacking ensembles
+
+
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+# xgb = XGBClassifier(learning_rate=0.05, n_estimators=750, max_depth=3, min_child_weight=2, gamma=0.01, reg_alpha=10,
+#                                             subsample=0.9, colsample_bytree=0.9, objective='binary:logistic')
+# xgb.fit(X_train, y_train)
+
+# X_resampled, y_resampled = RandomOverSampler().fit_sample(X_train, y_train)
+# X_resampled_df = pd.DataFrame(X_resampled, columns = X_train.columns)
+# y_resampled_df = pd.Series(y_resampled)
+# rf = RandomForestClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1)
+# rf.fit(X_resampled_df, y_resampled_df)
+
+# xtrees = ExtraTreesClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1, max_features=14)
+# xtrees.fit(X_train, y_train)
+
+
+
+# xgb_resampled = XGBClassifier(learning_rate=0.05, n_estimators=750, max_depth=3, min_child_weight=2, gamma=0.01, reg_alpha=10,
+#                                             subsample=0.9, colsample_bytree=0.9, objective='binary:logistic')
+# xgb_resampled.fit(X_resampled_df, y_resampled_df)
+
+
+
+# y_pred_xgb = xgb.predict_proba(X_test)[:,1]
+# y_pred_rf = rf.predict_proba(X_test)[:,1]
+# y_pred_xtrees = xtrees.predict_proba(X_test)[:,1]
+# y_pred_xgb_resampled = xgb_resampled.predict_proba(X_test)[:,1]
+
+
+
+# import numpy as np
+
+# best_single_classifer_score = 0.2837
+# weights_xgb = np.arange(0.95, 1, 0.005)
+# max_improvement_over_best = 0
+# w_xgb_argmax = 0
+# w_xgb_resampled_argmax = 0
+# w_rf_argmax = 0
+# w_xtrees_argmax = 0
+# for weight_xgb in weights_xgb:
+#     parts = np.arange(0.1, 1, 0.05)
+#     for weight_rf in [(1 - weight_xgb) * part for part in parts ]:
+#         parts2 = np.arange(0.1, 1, 0.05)
+#         for weight_xgb_resampled in [(1 - (weight_xgb + weight_rf)) * part for part in parts2 ]:
+#             weight_xtrees = 1 - (weight_xgb + weight_rf + weight_xgb_resampled)
+#             averaged_preds = weight_xgb * y_pred_xgb + weight_rf * y_pred_rf + weight_xgb_resampled * y_pred_xgb_resampled + weight_xtrees * y_pred_xtrees
+#             g = gini_norm(y_test, averaged_preds)
+#             better_by = g - best_single_classifer_score
+#             if (better_by > max_improvement_over_best):
+#                 max_improvement_over_best = better_by
+#                 w_xgb_argmax = weight_xgb
+#                 w_xgb_resampled_argmax = weight_xgb_resampled
+#                 w_rf_argmax = weight_rf
+#                 w_xtrees_argmax = weight_xtrees
+#                 print('Best improvement: ' + str(max_improvement_over_best), w_xgb_argmax, w_xgb_resampled_argmax, w_rf_argmax, w_xtrees_argmax)
 
 
 # # Predictions on test set
