@@ -462,68 +462,6 @@ categorical_features = [c for c in d.columns if '_cat' in c and '_calc_' not in 
 numeric_features = [c for c in d.columns if c not in binary_features and c not in categorical_features and '_calc_' not in c and c!='target']
 
 
-# ### Features distributions
-# And scatter-plot matrix
-
-
-# Seaborn too slow on that size. Also to many datapoints to get truthful representation - how to represent with that much datapoints?? (sampling)?
-# sns.set(style="ticks")
-# sns.pairplot(d, hue='target', vars=numeric_features)
-# plt.show()
-
-
-# ### Features correlations
-# Draw correlation matrix
-
-
-corr = d[binary_features + numeric_features + ['target']].corr()
-fig, ax = plt.subplots(figsize=(20, 20))
-sns.heatmap(corr, ax=ax, 
-            xticklabels=corr.columns.values,
-            yticklabels=corr.columns.values)
-plt.show()
-
-
-# We can see strong correlations for couple of features, let's zoom into them
-
-
-high_correlations = d[['ps_ind_14', 'ps_ind_11_bin', 'ps_ind_12_bin', 'ps_ind_13_bin', 'ps_reg_02', 'ps_reg_03', 'ps_car_12', 'ps_car_13', 'ps_car_14']].corr()
-fig, ax = plt.subplots(figsize=(20, 20))
-sns.heatmap(high_correlations, ax=ax, 
-            xticklabels=high_correlations.columns.values,
-            yticklabels=high_correlations.columns.values)
-plt.show()
-high_correlations
-
-
-# What are the correlations of binary and numerical columns to the target variable?
-
-
-corr['target']
-
-
-# We clearly see that _calc_ featrues do not correlate at all - they will not be taken as features. Some other features have also minimal correlation. They will be eliminated by PCA method later anyway.
-
-# ### PCA
-# What features are the most important by PCA method?
-
-
-# pca = PCA()
-# features = [c for c in d.columns if c != 'target']
-# pca.fit(d[features]);
-
-
-
-# f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,6))
-# ax1.plot(pca.explained_variance_ratio_)
-# ax2.plot(pca.explained_variance_ratio_[:25])
-# plt.show()
-
-
-
-# pca.components_
-
-
 # ## Evaluating  single classifiers
 
 # The final model performance metric will be Gini index. 
@@ -585,33 +523,6 @@ y = d['target']
 # grid_search_CV.fit(X, y)
 
 # grid_search_CV.best_params_
-
-
-# ### Logistic Regression
-
-
-# from sklearn.linear_model import LogisticRegression
-# import numpy as np
-
-# grid_search_CV = GridSearchCV(LogisticRegression(class_weight='balanced'), {
-#     'C': np.arange(0.001, 0.01, 0.001)
-# }, n_jobs=-1, cv=StratifiedKFold(n_splits=4, shuffle=True), scoring=make_scorer(roc_auc_score), verbose=10)
-
-# grid_search_CV.fit(X, y)
-
-# grid_search_CV.best_params_, grid_search_CV.best_score_
-
-
-
-# cross_validate(LogisticRegression(class_weight = 'balanced', C=0.002), X, y, n_jobs=1, cv=StratifiedKFold(n_splits=3, shuffle=True), scoring=make_scorer(roc_auc_score))
-# cross_validate(LogisticRegression(class_weight = 'balanced', C=0.002), X, y, n_jobs=1, cv=StratifiedKFold(n_splits=4, shuffle=True), scoring=make_scorer(gini_norm))
-# # roc_auc_score round 0.59, corresponsing to gini of 0.18
-
-
-
-# trees = RandomForestClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1)
-# cross_validate(trees, X, y, n_jobs=1, cv=StratifiedKFold(n_splits=3, shuffle=True), scoring=make_scorer(gini_norm))
-# gini of 0.18
 
 
 # ### XGBoost
@@ -680,15 +591,6 @@ def modelfit(alg, dtrain, predictors, useTrainCV=True, cv_folds=3, early_stoppin
 # # 0.2844
 
 
-# Confusion matrix:
-
-
-# from sklearn.metrics import confusion_matrix
-# confusion_matrix(y_test, classifier.predict(X_test))
-
-
-# WTF?? no true negatives?
-
 # ### Minority class oversampling
 
 
@@ -735,20 +637,6 @@ def modelfit(alg, dtrain, predictors, useTrainCV=True, cv_folds=3, early_stoppin
 # ### Extra trees
 
 
-# classifier = ExtraTreesClassifier(n_estimators=24, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1, max_features=14)
-
-# grid_search_CV = GridSearchCV(classifier, {
-#     'min_samples_split': [100, 1000, 5000, 9000],
-#     'max_features': [12, 14, 16]
-# }, n_jobs=7, cv=StratifiedKFold(n_splits=3, shuffle=True), scoring=make_scorer(roc_auc_score), verbose=10)
-
-# grid_search_CV.fit(X, y)
-
-# grid_search_CV.best_params_, grid_search_CV.best_score_
-# ({'max_features': 14, 'min_samples_split': 5000}, 0.59043612417733271)
-
-
-
 # from sklearn.ensemble import ExtraTreesClassifier
 
 # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
@@ -763,18 +651,7 @@ def modelfit(alg, dtrain, predictors, useTrainCV=True, cv_folds=3, early_stoppin
 
 # Extra trees Gini 0.2557
 
-
-# classifier = ExtraTreesClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1, max_features=14)
-# classifier.fit(X_resampled_df, y_resampled_df)
-
-# y_pred = classifier.predict_proba(X_test)[:,1]
-# gini_norm(y_test, y_pred)
-
-
-# No gain from oversampling on Extra Trees: 0.2556
-
 # ### Averaging ensembles
-# We may gat back to the idea below but first you have to callibrate the classifiers.
 
 
 # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
@@ -793,44 +670,10 @@ def modelfit(alg, dtrain, predictors, useTrainCV=True, cv_folds=3, early_stoppin
 
 
 
-# xgb_resampled = XGBClassifier(learning_rate=0.05, n_estimators=750, max_depth=3, min_child_weight=2, gamma=0.01, reg_alpha=10,
-#                                             subsample=0.9, colsample_bytree=0.9, objective='binary:logistic')
-# xgb_resampled.fit(X_resampled_df, y_resampled_df)
-
-
-
 # y_pred_xgb = xgb.predict_proba(X_test)[:,1]
 # y_pred_rf = rf.predict_proba(X_test)[:,1]
 # y_pred_xtrees = xtrees.predict_proba(X_test)[:,1]
 # y_pred_xgb_resampled = xgb_resampled.predict_proba(X_test)[:,1]
-
-
-
-# import numpy as np
-
-# best_single_classifer_score = 0.2837
-# weights_xgb = np.arange(0.95, 1, 0.005)
-# max_improvement_over_best = 0
-# w_xgb_argmax = 0
-# w_xgb_resampled_argmax = 0
-# w_rf_argmax = 0
-# w_xtrees_argmax = 0
-# for weight_xgb in weights_xgb:
-#     parts = np.arange(0.1, 1, 0.05)
-#     for weight_rf in [(1 - weight_xgb) * part for part in parts ]:
-#         parts2 = np.arange(0.1, 1, 0.05)
-#         for weight_xgb_resampled in [(1 - (weight_xgb + weight_rf)) * part for part in parts2 ]:
-#             weight_xtrees = 1 - (weight_xgb + weight_rf + weight_xgb_resampled)
-#             averaged_preds = weight_xgb * y_pred_xgb + weight_rf * y_pred_rf + weight_xgb_resampled * y_pred_xgb_resampled + weight_xtrees * y_pred_xtrees
-#             g = gini_norm(y_test, averaged_preds)
-#             better_by = g - best_single_classifer_score
-#             if (better_by > max_improvement_over_best):
-#                 max_improvement_over_best = better_by
-#                 w_xgb_argmax = weight_xgb
-#                 w_xgb_resampled_argmax = weight_xgb_resampled
-#                 w_rf_argmax = weight_rf
-#                 w_xtrees_argmax = weight_xtrees
-#                 print('Best improvement: ' + str(max_improvement_over_best), w_xgb_argmax, w_xgb_resampled_argmax, w_rf_argmax, w_xtrees_argmax)
 
 
 # # Stacking
@@ -887,144 +730,301 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random
 # #### Gradient Boosting
 
 
-from sklearn.ensemble import GradientBoostingClassifier
-
-# TODO: hyperparams + oversampling
-
-# gb = GradientBoostingClassifier(min_samples_split=5000)
-# gb.fit(X_train, y_train)
-# gb_y_pred = gb.predict_proba(X_test)[:,1]
-# pd.Series(gb_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_gb.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, gb_y_pred)
-# 0.2738
-
-
-
-# gb = GradientBoostingClassifier(min_samples_split=1000)
-# gb.fit(X_train, y_train)
-# gb_y_pred = gb.predict_proba(X_test)[:,1]
-# pd.Series(gb_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_gb.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, gb_y_pred)
-
-
-
-# gb = GradientBoostingClassifier(min_samples_split=300)
-# gb.fit(X_train, y_train)
-# gb_y_pred = gb.predict_proba(X_test)[:,1]
-# pd.Series(gb_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_gb.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, gb_y_pred)
-# # 0.27406
-
-
-
-# gb = GradientBoostingClassifier(min_samples_split=300, n_estimators=200)
-# gb.fit(X_train, y_train)
-# gb_y_pred = gb.predict_proba(X_test)[:,1]
-# pd.Series(gb_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_gb.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, gb_y_pred)
-# # 0.2785
-
-
-
+# from sklearn.ensemble import GradientBoostingClassifier
 # gb = GradientBoostingClassifier(min_samples_split=300, n_estimators=300)
 # gb.fit(X_train, y_train)
 # gb_y_pred = gb.predict_proba(X_test)[:,1]
 # pd.Series(gb_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_gb.csv', float_format='%.4f', index=False)
 # gini_norm(y_test, gb_y_pred)
-# # 0.27957 - best but takes time
+# # # 0.27957 - best but takes time
 
 
 
-# gb = GradientBoostingClassifier(min_samples_split=30)
-# gb.fit(X_train, y_train)
-# gb_y_pred = gb.predict_proba(X_test)[:,1]
-# pd.Series(gb_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_gb.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, gb_y_pred)
+from mlxtend.classifier import StackingCVClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier
+import numpy as np
 
 
 
-# gb = GradientBoostingClassifier(min_samples_split=150)
-# gb.fit(X_train, y_train)
-# gb_y_pred = gb.predict_proba(X_test)[:,1]
-# pd.Series(gb_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_gb.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, gb_y_pred)
+RANDOM_SEED = 42
+
+xgb = XGBClassifier(learning_rate=0.05, n_estimators=750, max_depth=3, min_child_weight=2, gamma=0.01, reg_alpha=10,
+                                             subsample=0.9, colsample_bytree=0.9, objective='binary:logistic')
+xtrees = ExtraTreesClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1, max_features=14)
+rf = RandomForestClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1) #TODO add oversampling
+gb = GradientBoostingClassifier(min_samples_split=300, n_estimators=100) #TODO change n_estimators=300
+
+lr = LogisticRegression() #TODO: other classifier? Tree? regularize regression?
+
+# The StackingCVClassifier uses scikit-learn's check_cv
+# internally, which doesn't support a random seed. Thus
+# NumPy's random seed need to be specified explicitely for
+# deterministic behavior
+np.random.seed(RANDOM_SEED)
+
+
+# ### Learning curves
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import learning_curve
+
+def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None, scoring=make_scorer(roc_auc_score), n_jobs=1):
+    """
+    ylim : tuple, shape (ymin, ymax), optional
+        Defines minimum and maximum yvalues plotted.
+
+    n_jobs : integer, optional
+        Number of jobs to run in parallel (default 1).
+    """
+    plt.figure()
+    plt.title(title)
+    if ylim is not None:
+        plt.ylim(*ylim)
+    plt.xlabel("Training examples")
+    plt.ylabel("Score")
+    train_sizes, train_scores, test_scores = learning_curve(
+        estimator, X, y, cv=cv, n_jobs=n_jobs, scoring=scoring)
+    train_scores_mean = np.mean(train_scores, axis=1)
+    train_scores_std = np.std(train_scores, axis=1)
+    test_scores_mean = np.mean(test_scores, axis=1)
+    test_scores_std = np.std(test_scores, axis=1)
+    plt.grid()
+
+    plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                     train_scores_mean + train_scores_std, alpha=0.1,
+                     color="r")
+    plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                     test_scores_mean + test_scores_std, alpha=0.1, color="g")
+    plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
+             label="Training score")
+    plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
+             label="Cross-validation score")
+
+    plt.legend(loc="best")
+    plt.show()
 
 
 
-# gb = GradientBoostingClassifier(min_samples_split=500)
-# gb.fit(X_train, y_train)
-# gb_y_pred = gb.predict_proba(X_test)[:,1]
-# pd.Series(gb_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_gb.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, gb_y_pred)
+# plot_learning_curve(rf, "Learning Curves for RF, most tuned settings", X, y, ylim=(0.01, 1.01), n_jobs=4)
 
 
-# Gradient Boosting with oversampling
+# !['tuned RF learning curve'](img/tuned_rf_learning_curve.png)
+
+# !['tuned XGB learning curve'](img/tuned_xgb_learning_curve.png)
+
+# !['tuned xtrees learning curve'](img/tuned_xtrees_learning_curve.png)
 
 
-# gb_oversampled = GradientBoostingClassifier(min_samples_split=5000)
-# gb_oversampled.fit(X_resampled_df, y_resampled_df)
-# gb_oversampled_y_pred = gb_oversampled.predict_proba(X_test)[:,1]
-# pd.Series(gb_oversampled_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_gb_oversampled.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, gb_oversampled_y_pred)
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=lr, use_probas=True, verbose=2) # TODO cv=2 is the default - enlarge, up to 5?
+# #TODO: stratify=True
+# #TODO grid search CV parameters of level 1 classifiers, as working in such ensemble?
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2767
 
 
-# Score was 0.2740, so, as expected, oversampling did not help for Gradient Boosting
 
-# Hyper params tuning for Gradient Boosting
-
-
-# grid_search_CV = GridSearchCV(GradientBoostingClassifier(min_samples_split=5000, learning_rate=0.1), {
-# #     'n_estimators': [100, 200],
-#      'min_samples_split': [1000, 5000, 10000]
-# }, n_jobs=-1, cv=StratifiedKFold(n_splits=3, shuffle=True), scoring=make_scorer(roc_auc_score), verbose=10)
-
-# grid_search_CV.fit(X, y)
-# grid_search_CV.best_params_, grid_search_CV.best_score_
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=lr, use_probas=True, stratify=True, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2761 - no point to add StackingCVClassifier(stratify=True)
 
 
-# #### AdaBoost
+
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=RandomForestClassifier(n_estimators=100, n_jobs=-1), use_probas=True, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.1441 !!!! overfit. Stay with normal linear regression
 
 
-# Does not end.
-# from sklearn.ensemble import AdaBoostClassifier
 
-# # TODO: hyperparams + oversampling
-
-# ada = AdaBoostClassifier(DecisionTreeClassifier(min_samples_split=5000), n_estimators=200)
-# ada.fit(X_train, y_train)
-# ada_y_pred = ada.predict_proba(X_test)[:,1]
-# pd.Series(ada_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_ada.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, ada_y_pred)
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=lr, use_probas=True, cv=3, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2771: better than default (StackingCVClassifier.cv=2)
 
 
-# #### ANN?
+
+# X_resampled, y_resampled = RandomOverSampler().fit_sample(X_train, y_train)
+# X_resampled_df = pd.DataFrame(X_resampled, columns = X_train.columns)
+# y_resampled_df = pd.Series(y_resampled)
+
+# xgb = XGBClassifier(learning_rate=0.05, n_estimators=750, max_depth=3, min_child_weight=2, gamma=0.01, reg_alpha=10,
+#                                              subsample=0.9, colsample_bytree=0.9, objective='binary:logistic')
+# xtrees = ExtraTreesClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1, max_features=14)
+# rf = RandomForestClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1)
+# gb = GradientBoostingClassifier(min_samples_split=300, n_estimators=300)
+
+# # TODO: http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html: tune:
+# # - regularization
+# # - class_weight
+# # ponoc tez Logistic regression zachowuje sie lepiej na normalnych rozkladach...Zobaczyc na rozklady.
+# lr = LogisticRegression()
+
+# np.random.seed(RANDOM_SEED)
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=lr, use_probas=True, cv=3, verbose=2) 
+
+# sclf.fit(X_resampled_df.values, y_resampled_df.values)
+# sclf_y_pred = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred)
+# # 0.23538 and takes very long (2h?)s
+# # Bad idea to use all base models on oversampled train set.
 
 
-# from sklearn.neural_network import MLPClassifier
-
-# # TODO: hyperparams + oversampling
-
-# ann = MLPClassifier(hidden_layer_sizes=(100,))
-# ann.fit(X_train, y_train)
-# ann_y_pred = ann.predict_proba(X_test)[:,1]
-# pd.Series(ann_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_ann.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, ann_y_pred)
-# # 0.15
+# Oversample only for RF!
 
 
-# #### SVC
+# class OverSamplingRandomForestClassifier(RandomForestClassifier):
+#     def fit(self, X, y, sample_weight=None):
+#         X_resampled, y_resampled = RandomOverSampler().fit_sample(X, y)
+#         return super(OverSamplingRandomForestClassifier, self).fit(X_resampled,y_resampled,sample_weight)
+
+# xgb = XGBClassifier(learning_rate=0.05, n_estimators=750, max_depth=3, min_child_weight=2, gamma=0.01, reg_alpha=10,
+#                                              subsample=0.9, colsample_bytree=0.9, objective='binary:logistic')
+# xtrees = ExtraTreesClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1, max_features=14)
+# rf = OverSamplingRandomForestClassifier(n_estimators=100, class_weight = 'balanced', criterion='entropy', min_samples_split=5000, n_jobs=-1)
+# gb = GradientBoostingClassifier(min_samples_split=300, n_estimators=100) # TODO increase to 300
+# lr = LogisticRegression()
+
+# np.random.seed(RANDOM_SEED)
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=lr, use_probas=True, cv=3, verbose=2) 
+
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred)
+# # 0.27707 - no gain from oversampling RF (while in this stacked generalization)
 
 
-# # does not finish for 20 mins
-# from sklearn.svm import SVC
+# How about CV 5?
 
-# # TODO: hyperparams + oversampling
 
-# svc = SVC()
-# svc.fit(X_train, y_train)
-# svc_y_pred = svc.predict_proba(X_test)[:,1]
-# pd.Series(svc_y_pred).to_csv('tmp' + os.sep + 'validation_set_preditions_svc.csv', float_format='%.4f', index=False)
-# gini_norm(y_test, svc_y_pred)
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=lr, use_probas=True, cv=5, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2777: not much better than cv 3...
+
+
+# Try out some more regularization for Logit
+
+
+sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=LogisticRegression(C=0.1), use_probas=True, cv=3, verbose=2)
+sclf.fit(X_train.values, y_train.values)
+sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+gini_norm(y_test, sclf_y_pred_proba)
+# 0.2710, 0.2718
+
+
+
+sclf.meta_clf_.coef_
+
+
+
+sclf.meta_clf_.intercept_
+
+
+
+sclf.meta_clf_.n_iter_
+
+
+# __max_iter=300
+# class_weight='balanced'
+# penalty='l1'__
+
+
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=LogisticRegression(max_iter=300, class_weight='balanced'), use_probas=True, cv=3, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2788
+
+
+# use_features_in_secondary
+
+
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=LogisticRegression(), use_probas=True, cv=3, use_features_in_secondary=True, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# 0.2745
+
+
+# __How about use features in secondary and XGB as metaclassifier you will have to tune it perhaps__?
+
+
+meta_xgb = XGBClassifier(learning_rate=0.05, n_estimators=750, max_depth=3, min_child_weight=2, gamma=0.01, reg_alpha=10,
+                                             subsample=0.9, colsample_bytree=0.9, objective='binary:logistic')
+sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=meta_xgb, use_probas=True, cv=3, use_features_in_secondary=True, verbose=2)
+sclf.fit(X_train.values, y_train.values)
+sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+gini_norm(y_test, sclf_y_pred_proba)
+# 0.2804
+
+
+# Other KFold:
+
+
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=LogisticRegression(), use_probas=True, cv=StratifiedKFold(n_splits=3, shuffle=True), verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2757 - worse than plain cv = 3.
+
+
+# and less regularization
+
+
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf, gb], meta_classifier=LogisticRegression(C=10), use_probas=True, cv=3, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2774
+
+
+
+# sclf = StackingCVClassifier(classifiers=[xgb, xtrees, rf], meta_classifier=lr, use_probas=True, cv=3, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2774
+
+
+
+# xgb.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = xgb.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2843
+
+
+
+# sclf = StackingCVClassifier(classifiers=[xgb], meta_classifier=lr, use_probas=True, cv=3, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2843
+
+
+
+# sclf = StackingCVClassifier(classifiers=[xgb, rf], meta_classifier=lr, use_probas=True, cv=3, verbose=2)
+# sclf.fit(X_train.values, y_train.values)
+# sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+# gini_norm(y_test, sclf_y_pred_proba)
+# # 0.2769
+
+
+
+sclf = StackingCVClassifier(classifiers=[xgb, gb], meta_classifier=lr, use_probas=True, cv=3, verbose=2)
+sclf.fit(X_train.values, y_train.values)
+sclf_y_pred_proba = sclf.predict_proba(X_test.values)[:,1]
+gini_norm(y_test, sclf_y_pred_proba)
+# 0.2842
 
 
 # # Predictions on test set
