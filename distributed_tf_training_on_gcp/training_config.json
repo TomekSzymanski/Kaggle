@@ -1,0 +1,31 @@
+{
+  "workerPoolSpecs": [
+    {
+      "machineSpec": {
+        "machineType": "n1-standard-4",
+        "acceleratorType": "NVIDIA_TESLA_T4",
+        "acceleratorCount": 2
+      },
+      "replicaCount": "1",
+      "diskSpec": {
+        "bootDiskType": "pd-ssd",
+        "bootDiskSizeGb": 100
+      },
+      "pythonPackageSpec": {
+        "executorImageUri": "europe-docker.pkg.dev/vertex-ai/training/tf-gpu.2-7:latest",
+        "packageUris": [
+          "gs://deep-learning-experiments/training_jobs/trainer-1.5.tar.gz"
+        ],
+        "pythonModule": "trainer.task"
+      }
+    }
+  ],
+  "scheduling": {
+        "timeout": "7200s"
+  },
+  "serviceAccount": "453907483559-compute@developer.gserviceaccount.com",
+  "baseOutputDirectory": {
+    "outputUriPrefix": "gs://deep-learning-experiments/models5/"
+  },
+  "tensorboard": "projects/453907483559/locations/europe-west2/tensorboards/6173309189218107392"
+}

@@ -1,0 +1,511 @@
+type: HyperparameterTuningTask
+version: 1.0.0
+description: >
+  A training task that runs multiple Trials for hyperparameter tuning.
+  Each Trial is a complete execution of training application provided by the caller,
+  which runs on the infrastructure specified by the caller with values for hyperparameters
+  set within limits specified by the caller. AI Platform keeps track of the results of
+  each Trial and makes adjustments for subsequent Trials. This task cannot
+  directly use data stored in AI Platform. This task may upload a Model via
+  the TrainingPipeline, and if it is to happen, then TrainingPipeline's
+  'model_to_upload' must be set, where all non-output-only fields except for
+  'training_pipeline' may be provided, and (from non-required fields)
+  the 'container_spec' must be given. These fields, if needed, should be provided
+  when creating the TrainingPipeline.
+  Can be used in TrainingPipeline.training_task_definition field.
+inputs:
+  type: object
+  required:
+  - maxTrialCount
+  - parallelTrialCount
+  - studySpec
+  - trialJobSpec
+  maxTrialCount:
+    type: int32
+    description: >
+      The desired total number of Trials.
+  parallelTrialCount:
+    type: int32
+    description: >
+      The desired number of Trials to run in parallel.
+  maxFailedTrialCount:
+    type: int32
+    description: >
+      The number of failed Trials that need to be seen before failing the HyperparameterTuning task.
+      If set to 0, Vertex AI decides how many Trials must fail before the whole job fails.
+  studySpec:
+    type: object
+    description: >
+      Study specification of the hyperparameters to be tuned. Only one of the properties
+      'decayCurveStoppingSpec', 'medianAutomatedStoppingSpec' should be specified.
+    required:
+    - metrics
+    - parameters
+    properties:
+      metrics:
+        type: array
+        items:
+          type: object
+          description: >
+            Specification of a metric to optimize.
+          required:
+          - metricId
+          - goal
+          properties:
+            metricId:
+              type: string
+              description: >
+                The unique ID of the metric. Must not contain whitespaces.
+            goal:
+              description: >
+                The optimization goal of the metric.
+              oneOf:
+              - enum: [MAXIMIZE]
+                description: >
+                  Maximize the metric.
+              - enum: [MINIMIZE]
+                description: >
+                  Minimize the metric.
+      parameters:
+        type: array
+        items:
+          type: object
+          description: >
+            Specification of a hyperparameter to optimize. Only one of the properties
+            'doubleValueSpec','integerValueSpec', 'categoricalValueSpec', 'discreteValueSpec'
+            should be pecified.
+          required:
+          - parameterId
+          properties:
+            parameterId:
+              type: string
+              description: >
+                The unique ID of the hyperparameter. Must not contain whitespaces.
+            doubleValueSpec:
+              type: object
+              description: >
+                The value spec for a 'DOUBLE' parameter.
+              required:
+              - minValue
+              - maxValue
+              properties:
+                minValue:
+                  type: number
+                  format: double
+                  description: >
+                    Inclusive minimum value of the parameter.
+                maxValue:
+                  type: number
+                  format: double
+                  description: >
+                    Inclusive maximum value of the parameter.
+            integerValueSpec:
+              type: object
+              description: >
+                The value spec for a 'INTEGER' parameter.
+              required:
+              - minValue
+              - maxValue
+              properties:
+                minValue:
+                  type: integer
+                  format: int64
+                  description: >
+                    Inclusive minimum value of the parameter.
+                maxValue:
+                  type: integer
+                  format: int64
+                  description: >
+                    Inclusive maximum value of the parameter.
+            categoricalValueSpec:
+              type: object
+              description: >
+                The value spec for a 'CATEGORICAL' parameter.
+              required:
+              - values
+              properties:
+                values:
+                  type: array
+                  description: >
+                    The list of possible categories.
+                  items:
+                    type: string
+            discreteValueSpec:
+              type: object
+              description: >
+                The value spec for a 'DISCRETE' parameter.
+              required:
+              - values
+              properties:
+                values:
+                  type: array
+                  description: >
+                    The list of possible values. The list should be in strictly increasing order.
+                    For instance, this parameter might have possible settings of 1.5, 2.5, and
+                    4.0. This list should not contain more than 1,000 values.
+                  items:
+                    type: number
+                    format: double
+            scaleType:
+              description: >
+                The type of scaling that should be applied to this parameter.
+              oneOf:
+              - enum: [UNIT_LINEAR_SCALE]
+                description: >
+                  Scales the feasible space to (0, 1) linearly.
+              - enum: [UNIT_LOG_SCALE]
+                description: >
+                  Scales the feasible space logarithmically to (0, 1). The entire
+                  feasible space must be strictly positive.
+              - enum: [UNIT_REVERSE_LOG_SCALE]
+                description: >
+                  Scales the feasible space "reverse" logarithmically to (0, 1). The
+                  result is that values close to the top of the feasible space are spread
+                  out more than points near the bottom. The entire feasible space must be
+                  strictly positive.
+            conditionalParameterSpecs:
+              type: array
+              items:
+                type: object
+                description: >
+                  Specification of a conditional parameter to use. Only one of the properties
+                  'parentDiscreteValues','parentIntValues', 'parentCategoricalValues'
+                  should be pecified.
+                required:
+                - parameterSpec
+                properties:
+                  parameterSpec:
+                    type: object
+                    description: >
+                      See defination of parameters. Specification of a hyperparameter to optimize.
+                      Only one of the properties 'doubleValueSpec','integerValueSpec',
+                      'categoricalValueSpec', 'discreteValueSpec' should be pecified.
+                  parentDiscreteValues:
+                    type: object
+                    description: >
+                      The value specs for discrete conditional parameter.
+                    required:
+                    - values
+                    properties:
+                      values:
+                        type: array
+                        items:
+                          type: number
+                          format: double
+                      description: >
+                        The value used in discrete conditional parameter
+                  parentIntValues:
+                    type: object
+                    description: >
+                      The value specs for int conditional parameter.
+                    required:
+                    - values
+                    properties:
+                      values:
+                        type: array
+                        items:
+                          type: integer
+                          format: int64
+                      description: >
+                        The value used in int conditional parameter
+                  parentCategoricalValues:
+                    type: object
+                    description: >
+                      The value specs for categorical conditional parameter.
+                    required:
+                    - values
+                    properties:
+                      values:
+                        type: array
+                        items:
+                          type: string
+                      description: >
+                        The value used in categorical conditional parameter
+      algorithm:
+        description: >
+          The search algorithm specified for the Study.
+        oneOf:
+        - enum: [GAUSSIAN_PROCESS_BANDIT]
+          description: >
+            GAUSSIAN_PROCESS_BANDIT.
+        - enum: [GRID_SEARCH]
+          description: >
+            Simple grid search within the feasible space. To use grid search,
+            all parameters must be `INTEGER`, `CATEGORICAL`, or `DISCRETE`.
+        - enum: [RANDOM_SEARCH]
+          description: >
+            Simple random search within the feasible space.
+      decayCurveStoppingSpec:
+        type: object
+        description: >
+          The automated early stopping spec using decay curve rule. The decay curve automated
+          stopping rule builds a Gaussian Process Regressor to predict the final objective value
+          of a Trial based on the already completed Trials and the intermediate measurements of
+          the current Trial. Early stopping is requested for the current Trial if there is very
+          low probability to exceed the optimal value found so far.
+        properties:
+          useElapsedDuration:
+            type: boolean
+            description: >
+              True if `measurement.elapsed_duration` of the `trials` of the backing
+              `HyperparameterTuningJob` is used as the x-axis of each Trials Decay Curve.
+              Otherwise, `measurement.step_count` will be used as the x-axis.
+      medianAutomatedStoppingSpec:
+        type: object
+        description: >
+          The automated early stopping spec using median rule. The median automated stopping
+          rule stops a pending Trial if the Trial's best objective value is strictly below the
+          median 'performance' of all completed Trials reported up to the Trial's last
+          measurement. Currently, 'performance' refers to the running average of the objective
+          values reported by the Trial in each measurement.
+        properties:
+          useElapsedDuration:
+            type: boolean
+            description: >
+              True if median automated stopping rule applies on `measurement.elapsed_duration`
+              of the `trials` of the backing `HyperparameterTuningJob`. It means that
+              elapsed_duration field of latest measurement of current Trial is used to compute
+              median objective value for each completed Trials.
+      measurementSelectionType:
+        description: >
+          Indicates which measurement to use if/when the service automatically
+          selects the final measurement from previously reported intermediate
+          measurements. Choose this based on two considerations:
+          A) Do you expect your measurements to monotonically improve?
+             If so, choose LAST_MEASUREMENT. On the other hand, if you're in a
+             situation where your system can "over-train" and you expect the
+             performance to get better for a while but then start declining,
+             choose BEST_MEASUREMENT.
+          B) Are your measurements significantly noisy and/or irreproducible?
+             If so, BEST_MEASUREMENT will tend to be over-optimistic, and it
+             may be better to choose LAST_MEASUREMENT.
+          If both or neither of (A) and (B) apply, it doesn't matter which
+          selection type is chosen.
+        oneOf:
+        - enum: [LAST_MEASUREMENT]
+          description: >
+            Use the last measurement reported.
+        - enum: [BEST_MEASUREMENT]
+          description: >
+            Use the best measurement reported.
+  trialJobSpec:
+    type: object
+    description: >
+      The specification of a Trial. The same spec applies to all Trials.
+    required:
+    - workerPoolSpecs
+    properties:
+      scheduling:
+        type: object
+        description: >
+          Custom encryption key spec that can be applied to a resource.
+        properties:
+          timeout:
+            type: string
+            pattern: '^\d+(\.\d{1,9})?s$'
+            description: >
+              The maximum running time of this custom task. Accepted are any
+              fractional digits (also none) as long as they fit into nano-seconds
+              precision and the suffix "s" is required.
+            default: "604800s"  # 7 days
+        restartJobOnWorkerRestart:
+          type: bool
+          description: >
+            Restarts the entire job if a worker gets restarted.
+          default: false
+      baseOutputDirectory:
+        type: object
+        description: >
+          The Google Cloud Storage destination to store the output of this task. Following
+          AI Platform environment variables will be passed to containers or python modules of each
+          child Custom Job backing a Trial of this task when this field is set:
+            AIP_MODEL_DIR = <base_output_directory>/<trial_id>/model/
+            AIP_CHECKPOINT_DIR = <base_output_directory>/<trial_id>/checkpoints/
+            AIP_TENSORBOARD_LOG_DIR = <base_output_directory>/<trial_id>/logs/
+        properties:
+          outputUriPrefix:
+            type: string
+            pattern: '^gs:\/\/(.+)\/(.+)$'
+            description: >
+              The Google Cloud Storage URI to output directory. If the uri doesn't end with '/',
+              a '/' will be automatically appended. The directory is created if it doesn't exist.
+      serviceAccount:
+        type: string
+        description: >
+          Specifies the service account for workload run-as account.
+          Users submitting jobs must have act-as permission on this run-as account.
+      network:
+        type: string
+        description: >
+          The full name of the Compute Engine network to which the Job
+          should be peered. For example, projects/12345/global/networks/myVPC.
+          Private services access must already be configured for the network. If left
+          unspecified, the job is not peered with any network.
+      workerPoolSpecs:
+        type: array
+        items:
+          type: object
+          description: >
+            Specification of a worker pool. Includes machine specification, Docker image
+            and it's parameters. Only one of the properties containerSpec', 'pythonPackageSpec'
+            should be provided.
+          required:
+          - machineSpec
+          - replicaCount
+          properties:
+            replicaCount:
+              type: integer
+              format: int64
+              description: >
+                The number of worker replicas to use for this worker pool.
+              default: 0
+            machineSpec:
+              type: object
+              required:
+              - machineType
+              description: >
+                Specification of a single machine.
+              properties:
+                machineType:
+                  type: string
+                  description: >
+                    Specifies the type of Compute Engine virtual machine.
+                    See https://cloud.google.com/compute/docs/machine-types.
+                acceleratorType:
+                  description: >
+                    The type of the accelerator to use.
+                  oneOf:
+                  - enum: [NVIDIA_TESLA_K80]
+                    description: >
+                      NVIDIA_TESLA_K80.
+                  - enum: [NVIDIA_TESLA_P100]
+                    description: >
+                      NVIDIA_TESLA_P100.
+                  - enum: [NVIDIA_TESLA_V100]
+                    description: >
+                      NVIDIA_TESLA_V100.
+                  - enum: [NVIDIA_TESLA_P4]
+                    description: >
+                      NVIDIA_TESLA_P4.
+                  - enum: [NVIDIA_TESLA_T4]
+                    description: >
+                      NVIDIA_TESLA_T4.
+                  - enum: [NVIDIA_TESLA_A100]
+                    description: >
+                      NVIDIA_TESLA_A100.
+                  - enum: [TPU_V2]
+                    description: >
+                      TPU_V2.
+                  - enum: [TPU_V3]
+                    description: >
+                      TPU_V3.
+                acceleratorCount:
+                  type: integer
+                  format: int32
+                  description: >
+                    The number of accelerators to attach to a worker replica.
+            containerSpec:
+              type: object
+              description: >
+                Custom container task.
+              properties:
+                imageUri:
+                  type: string
+                  format: gcr_path
+                  description: >
+                    Uri of the container image in the GCR that is to be run on each worker replica.
+                  pattern:  '^gcr\.io\/(.+)\/(.+):(.){0,127}$'
+                command:
+                  type: array
+                  description: >
+                    The command to be invoked when the container is started.
+                    It overrides the entrypoint instruction in Dockerfile when provided.
+                  items:
+                    type: string
+                args:
+                  type: array
+                  items:
+                    type: string
+                    description: >
+                      The argument to be passed to container entrypoint as a string.
+                env:
+                  type: array
+                  items:
+                    type: object
+                    description: >
+                      Environment variables to be passed to the container. At most 10 environment
+                      variables can be specified.
+                    required:
+                    - name
+                    - value
+                    properties:
+                      name:
+                        type: string
+                        description: >
+                          Name of the environment variable. Must be unique.
+                      value:
+                        type: string
+                        description: >
+                          Value of the environment variable.
+            pythonPackageSpec:
+              type: object
+              description: >
+                Python packaged task.
+              properties:
+                executorImageUri:
+                  type: string
+                  format: gcr_path
+                  description: >
+                    Uri of the container image in the GCR that will execute the provided python
+                    package.
+                  pattern:  '^gcr\.io\/(.+)\/(.+):(.){0,127}$'
+                packageUris:
+                  type: array
+                  description: >
+                    Uri of the python packages in Google Cloud Storage.
+                  items:
+                    type: string
+                pythonModule:
+                  type: string
+                  description: >
+                    Python module name to run after installing the packages.
+                args:
+                  type: array
+                  items:
+                    type: string
+                    description: >
+                      Command line arguments to be passed to the Python task.
+                env:
+                  type: array
+                  items:
+                    type: object
+                    description: >
+                      Environment variables to be passed to the container. At most 10 environment
+                      variables can be specified.
+                    required:
+                    - name
+                    - value
+                    properties:
+                      name:
+                        type: string
+                        description: >
+                          Name of the environment variable. Must be unique.
+                      value:
+                        type: string
+                        description: >
+                          Value of the environment variable.
+metadata:
+  type: object
+  properties:
+    backingHyperparameterTuningJob:
+      type: string
+      format: hyperparameter_tuning_job
+      pattern: '^projects\/(.+)\/locations\/(.+)\/hyperparameterTuningJobs\/(.+)$'
+      description: >
+        The resource name of the HyperparameterTuningJob that has been created to carry out this HyperparameterTuning task.
+    bestTrialBackingCustomJob:
+      type: string
+      format: custom_job
+      pattern: '^projects\/(.+)\/locations\/(.+)\/customJobs\/(.+)$'
+      description: >
+        The resource name of the CustomJob that has been created to run the best Trial of this HyperparameterTuning task.
